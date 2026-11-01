@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Deal Board">
+<meta name="theme-color" content="#f6f1ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16130f" media="(prefers-color-scheme: dark)">
+<title>Deal Board</title>
+<style>
+  :root {
+    --bg: #f6f1ea; --card: #fffdf9; --ink: #1d1a16; --muted: #6f675d; --line: #e6ddd1;
+    --accent: #e0573a; --accent-ink: #fff; --good: #1f8a5b; --warn: #b7791f; --chip: #f0e8dc;
+    --r: 18px; --shadow: 0 1px 2px rgba(40,30,20,.06), 0 6px 20px rgba(40,30,20,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #16130f; --card: #211d18; --ink: #f3ede4; --muted: #a59b8e; --line: #342e27;
+            --chip: #2c2620; --shadow: none; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+         padding: env(safe-area-inset-top) 0 calc(78px + env(safe-area-inset-bottom)); }
+  a { color: inherit; }
+  header { padding: 18px 18px 6px; display: flex; align-items: baseline; justify-content: space-between; }
+  h1 { font: 700 28px/1.1 ui-serif, "New York", Georgia, serif; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  main { padding: 6px 14px 20px; max-width: 640px; margin: 0 auto; }
+  .card { background: var(--card); border-radius: var(--r); box-shadow: var(--shadow);
+          border: 1px solid var(--line); padding: 14px 16px; margin: 10px 0; }
+  .deal { display: flex; gap: 12px; align-items: flex-start; text-decoration: none; }
+  .flag { font-size: 30px; line-height: 1; width: 36px; text-align: center; flex: none; }
+  .grow { flex: 1; min-width: 0; }
+  .t { font-weight: 650; }
+  .m { color: var(--muted); font-size: 14px; }
+  .price { font: 700 20px/1 ui-rounded, -apple-system, sans-serif; white-space: nowrap; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 2px 9px; font-size: 12.5px; }
+  .chip.hot { background: var(--accent); color: var(--accent-ink); }
+  .chip.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .chip.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  h2 { font: 650 13px/1 -apple-system, sans-serif; text-transform: uppercase; letter-spacing: .08em;
+       color: var(--muted); margin: 22px 4px 6px; }
+  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--card);
+        border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); z-index: 5; }
+  nav button { flex: 1; border: 0; background: none; color: var(--muted); padding: 9px 0 10px;
+               font: 600 11.5px -apple-system, sans-serif; }
+  nav button span { display: block; font-size: 21px; margin-bottom: 1px; }
+  nav button.on { color: var(--accent); }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .btn { display: block; text-align: center; padding: 13px; border-radius: 14px; font-weight: 650;
+         text-decoration: none; background: var(--chip); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); grid-column: 1 / -1; }
+  .hero { text-align: center; padding: 22px 16px 18px; }
+  .hero .flag { font-size: 52px; width: auto; }
+  .hero .big { font: 750 40px/1.05 ui-rounded, -apple-system, sans-serif; margin: 8px 0 2px; }
+  .row { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0;
+         border-top: 1px solid var(--line); font-size: 15px; }
+  .row:first-child { border-top: 0; }
+  .row b { font-weight: 650; text-align: right; }
+  .stay { padding: 10px 0; border-top: 1px solid var(--line); }
+  .stay:first-of-type { border-top: 0; }
+  .back { border: 0; background: var(--chip); border-radius: 999px; padding: 8px 14px; font-weight: 600;
+          color: var(--ink); }
+  .note { font-size: 14px; padding: 10px 12px; border-radius: 12px; background: var(--chip); margin-top: 8px; }
+  svg.spark { width: 100%; height: 56px; display: block; }
+  .lock { max-width: 360px; margin: 18vh auto 0; text-align: center; padding: 0 20px; }
+  .lock input { width: 100%; font-size: 17px; padding: 14px; border-radius: 14px; border: 1px solid var(--line);
+                background: var(--card); color: var(--ink); margin: 16px 0 10px; }
+  .lock button { width: 100%; font-size: 17px; padding: 14px; border: 0; border-radius: 14px;
+                 background: var(--accent); color: var(--accent-ink); font-weight: 650; }
+  .lock label { display: block; margin-top: 12px; color: var(--muted); font-size: 14px; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 10px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+  .seg { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 2px; scrollbar-width: none; }
+  .seg button { flex: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+                border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+  .seg button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+</style>
+</head>
+<body>
+<div id="app"><div class="lock"><p class="sub">Loading…</p></div></div>
+
+<script>
+const PW_KEY = "dealboard_pw";
+let DATA = null, TAB = "deals", FILTER = "all", retries = 0;
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => /^https?:\/\//i.test(u || "") ? esc(u) : "#";
+const gbp = n => n == null ? "" : "£" + Math.round(n).toLocaleString("en-GB");
+const day = iso => { if (!iso) return ""; const d = new Date(iso.slice(0,10) + "T12:00:00");
+  return d.toLocaleDateString("en-GB", {weekday: "short", day: "numeric", month: "short"}); };
+const ago = iso => { if (!iso) return "never"; const m = (Date.now() - new Date(iso)) / 60000;
+  if (m < 60) return Math.max(1, Math.round(m)) + " min ago"; if (m < 1440) return Math.round(m/60) + "h ago";
+  return Math.round(m/1440) + "d ago"; };
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function decrypt(blob, pw) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+  const key = await crypto.subtle.deriveKey({name: "PBKDF2", salt: b64(blob.salt), iterations: blob.iter, hash: "SHA-256"},
+    base, {name: "AES-GCM", length: 256}, false, ["decrypt"]);
+  const pt = await crypto.subtle.decrypt({name: "AES-GCM", iv: b64(blob.iv)}, key, b64(blob.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+async function load(pw) {
+  const r = await fetch("data.json?t=" + Date.now(), {cache: "no-store"});
+  if (!r.ok) throw new Error("no data yet");
+  DATA = await decrypt(await r.json(), pw);
+}
+
+function lockScreen(msg) {
+  document.getElementById("app").innerHTML = `
+    <div class="lock">
+      <h1>Deal Board</h1>
+      <p class="sub">${esc(msg || "Enter your dashboard password")}</p>
+      <input id="pw" type="password" autocomplete="current-password" placeholder="Password">
+      <button id="go">Unlock</button>
+      <label><input id="rem" type="checkbox" checked> Remember on this phone</label>
+    </div>`;
+  const go = async () => {
+    const pw = document.getElementById("pw").value;
+    try { await load(pw);
+      if (document.getElementById("rem").checked) { try { localStorage.setItem(PW_KEY, pw); } catch (e) {} }
+      sessionPw = pw; route();
+    } catch (e) { lockScreen("That didn't work. Check the password and try again"); }
+  };
+  document.getElementById("go").onclick = go;
+  document.getElementById("pw").onkeydown = e => { if (e.key === "Enter") go(); };
+}
+
+let sessionPw = null;
+
+// ---------------------------------------------------------------- views
+function dealCard(d) {
+  const chips = [];
+  if (d.error_fare) chips.push(`<span class="chip hot">Error fare</span>`);
+  if (d.cabin_label && d.cabin_label !== "economy") chips.push(`<span class="chip">${esc(d.cabin_label)}</span>`);
+  if (d.best_market) chips.push(`<span class="chip good">💱 save ${gbp(d.best_market.saving)}</span>`);
+  if (d.live) chips.push(`<span class="chip ${d.live.ok ? "good" : "warn"}">${d.live.ok ? "Live" : "May have gone"}</span>`);
+  if (d.trip_total) chips.push(`<span class="chip">🧳 trip ${gbp(d.trip_total.total)}</span>`);
+  if (d.caution) chips.push(`<span class="chip warn">⚠️ read up</span>`);
+  const price = d.price_gbp != null ? gbp(d.price_gbp) : "";
+  const when = d.dep ? `${day(d.dep)} → ${day(d.ret)} · ` : "";
+  return `<a class="card deal" href="#d=${esc(d.id)}">
+    <div class="flag">${esc(d.flag || "✈️")}</div>
+    <div class="grow"><div class="t">${esc(d.dest_name || d.title)}</div>
+      <div class="m">${esc(when)}${esc(d.origin_name ? "from " + d.origin_name : "")}</div>
+      <div class="m">${esc(d.search || d.source || "")} · ${ago(d.created)}</div>
+      <div class="chips">${chips.join("")}</div></div>
+    <div class="price">${price}</div></a>`;
+}
+
+function spark(hist) {
+  const pts = Object.entries(hist || {}).sort();
+  if (pts.length < 2) return "";
+  const vals = pts.map(p => p[1]), lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1;
+  const W = 300, H = 50;
+  const xy = vals.map((v, i) => [i / (vals.length - 1) * W, H - 4 - (v - lo) / span * (H - 8)]);
+  const path = xy.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const last = xy[xy.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${W} ${H + 6}" preserveAspectRatio="none">
+    <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="var(--accent)"/></svg>
+    <div class="m" style="display:flex;justify-content:space-between"><span>${esc(day(pts[0][0]))}</span>
+    <span>low ${gbp(lo)} · high ${gbp(hi)}</span><span>today</span></div>`;
+}
+
+function viewDeals() {
+  const kinds = {all: "All", fare: "Fare finds", feed: "From deal sites", error: "Error fares"};
+  let list = DATA.deals;
+  if (FILTER === "fare") list = list.filter(d => d.kind === "fare");
+  if (FILTER === "feed") list = list.filter(d => d.kind === "feed");
+  if (FILTER === "error") list = list.filter(d => d.error_fare);
+  return `<div class="seg">${Object.entries(kinds).map(([k, v]) =>
+      `<button class="${FILTER === k ? "on" : ""}" onclick="FILTER='${k}';render()">${v}</button>`).join("")}</div>
+    ${list.length ? list.map(dealCard).join("") : `<div class="empty">No deals here yet. They'll appear as alerts come in.</div>`}`;
+}
+
+function viewSearches(watched) {
+  const ss = DATA.searches.filter(s => s.watched === watched);
+  if (!ss.length) return `<div class="empty">Nothing here yet</div>`;
+  return ss.map(s => {
+    const rows = s.rows.slice(0, watched ? 6 : 12);
+    const body = rows.length ? rows.map(b => `
+      <div class="row" style="align-items:center">
+        <span><span style="font-size:20px">${esc(b.flag)}</span> ${esc(watched ? b.cabin_label : b.dest_name)}
+          <div class="m">${esc(day(b.dep))} · ${esc(b.stay)}n from ${esc(b.origin_name)}${watched ? "" : " · " + esc(b.cabin_label)}
+          ${b.caution ? " · ⚠️" : ""}</div></span>
+        <b>${gbp(b.all_in)}${b.adults > 1 ? `<div class="m">for ${b.adults}</div>` : ""}
+          ${b.pct_below ? `<div class="m" style="color:var(--good)">${b.pct_below}% below normal</div>` : ""}</b>
+      </div>${watched ? spark(b.history) : ""}`).join("") : `<div class="m">No prices yet</div>`;
+    return `<h2>${esc(s.name)}</h2><div class="card">${body}
+      <div class="m" style="margin-top:8px">Checked ${ago(s.last_run)}</div></div>`;
+  }).join("");
+}
+
+function viewStatus() {
+  const ok = iso => iso && (Date.now() - new Date(iso)) < 36 * 3600e3;
+  const src = DATA.sources.map(s => `<div class="row"><span><span class="dot" style="background:${s.error && !ok(s.last_ok) ? "var(--accent)" : "var(--good)"}"></span>${esc(s.name)}</span>
+      <b class="m">${s.last_ok ? "read " + ago(s.last_ok) : "not working"}</b></div>`).join("");
+  return `<h2>Bot</h2><div class="card">
+      <div class="row"><span>Fare searches</span><b>${ago(DATA.hunter_last_run)}</b></div>
+      <div class="row"><span>Deal feeds</span><b>${ago(DATA.feeds_last_run)}</b></div>
+      <div class="row"><span>Dashboard updated</span><b>${ago(DATA.generated)}</b></div></div>
+    <h2>Deal feeds</h2><div class="card">${src || '<div class="m">No feeds set up</div>'}</div>
+    <div class="card"><button class="back" onclick="try{localStorage.removeItem('${PW_KEY}')}catch(e){};location.hash='';location.reload()">Lock this phone</button></div>`;
+}
+
+function viewDeal(id) {
+  const d = DATA.deals.find(x => x.id === id);
+  if (!d) {
+    if (retries < 12) { retries++; setTimeout(async () => { try { await load(sessionPw); } catch (e) {} route(); }, 20000); }
+    return `<div class="empty"><p style="font-size:40px;margin:0">⏳</p>
+      <p>This deal is still being added to the board.<br>It usually takes a minute or two, and this page will refresh by itself.</p>
+      <p><button class="back" onclick="location.hash=''">← All deals</button></p></div>`;
+  }
+  retries = 0;
+  const rows = [];
+  if (d.dep) rows.push(["Dates", `${day(d.dep)} → ${day(d.ret)}`], ["Nights", d.nights]);
+  if (d.origin_name) rows.push(["From", d.origin_name + (d.positioning ? ` (+${gbp(d.positioning * (d.adults||1))} to get there)` : "")]);
+  if (d.flight_summary) rows.push(["Flights", d.flight_summary]);
+  if (d.cabin_label) rows.push(["Cabin", d.cabin_label]);
+  if (d.adults > 1) rows.push(["Travellers", d.adults]);
+  if (d.all_in && d.all_in !== d.price_gbp) rows.push(["All in", gbp(d.all_in)]);
+  if (d.baseline) rows.push(["Normally", gbp(d.baseline)]);
+  if (d.trip_type) rows.push(["Trip", d.trip_type === "one way" ? "One way only" : "Return"]);
+  const mk = (d.markets || []).length ? `<h2>Buy it in another country</h2><div class="card">
+      <div class="row"><span>🇬🇧 the UK</span><b>${gbp(d.price_gbp)}</b></div>
+      ${d.markets.map(m => `<div class="row"><span>${esc(m.name)} <span class="m">${esc(m.local)}</span></span>
+        <b style="color:${m.saving > 0 ? "var(--good)" : "inherit"}">${gbp(m.price_gbp)}${m.saving > 0 ? `<div class="m">save ${gbp(m.saving)}</div>` : ""}</b></div>`).join("")}
+      <div class="m" style="margin-top:6px">Pay with a card that has no foreign-transaction fees.</div></div>` : "";
+  const st = (d.stays || []).length ? `<h2>Where to stay</h2><div class="card">${d.stays.map(s => `
+      <div class="stay"><div style="display:flex;justify-content:space-between;gap:8px">
+        <span><span class="chip">${esc(s.label)}</span> <b>${esc(s.name)}</b></span><b>${gbp(s.per_night)}<span class="m">/night</span></b></div>
+        <div class="m">${s.stars ? s.stars + "★ · " : ""}${s.rating ? s.rating.toFixed(1) + "/5" : ""}${s.note ? " · " + esc(s.note) : ""}</div>
+        ${s.link ? `<a class="m" href="${safeUrl(s.link)}" target="_blank" rel="noopener">Hotel website →</a>` : ""}</div>`).join("")}
+      ${d.trip_total ? `<div class="note">🧳 Whole trip from <b>${gbp(d.trip_total.total)}</b> (flight + ${esc(d.trip_total.stay)})</div>` : ""}</div>` : "";
+  const book = (d.best_market && d.best_market.link) || d.book_url;
+  return `<div style="padding-top:8px"><button class="back" onclick="history.length>1?history.back():location.hash=''">← Back</button></div>
+    <div class="card hero"><div class="flag">${esc(d.flag || "✈️")}</div>
+      <div class="t" style="font-size:20px;margin-top:6px">${esc(d.dest_name || d.title)}</div>
+      ${d.price_gbp != null ? `<div class="big">${gbp(d.price_gbp)}</div>
+        <div class="m">${d.adults > 1 ? "for " + d.adults + " · " : ""}return${d.best_market ? ` · or <b style="color:var(--good)">${gbp(d.best_market.price_gbp)}</b> bought in ${esc(d.best_market.name)}` : ""}</div>` : ""}
+      ${d.reason ? `<div class="note" style="text-align:left">${esc(d.reason)}</div>` : ""}
+      ${d.live ? `<div class="note" style="text-align:left">${esc(d.live.text)}</div>` : ""}
+      ${d.caution ? `<div class="note" style="text-align:left">${esc(d.caution)}</div>` : ""}
+      <div class="btns">
+        ${book ? `<a class="btn primary" href="${safeUrl(book)}" target="_blank" rel="noopener">✈️ Book flights${d.best_market && d.best_market.link ? " (" + esc(d.best_market.name) + " price)" : ""}</a>` : ""}
+        ${d.hotels_url ? `<a class="btn" href="${safeUrl(d.hotels_url)}" target="_blank" rel="noopener">🏨 Hotels</a>` : ""}
+        ${d.source_url ? `<a class="btn" href="${safeUrl(d.source_url)}" target="_blank" rel="noopener">📰 Original post</a>` : ""}
+      </div></div>
+    ${rows.length ? `<div class="card">${rows.map(([k, v]) => `<div class="row"><span class="m">${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
+    ${d.history && Object.keys(d.history).length > 1 ? `<h2>Price over time</h2><div class="card">${spark(d.history)}</div>` : ""}
+    ${mk}${st}
+    ${d.verified === false ? `<div class="m" style="padding:0 6px">Flight price not yet verified, so check it on the booking page.</div>` : ""}`;
+}
+
+// ---------------------------------------------------------------- shell
+function render() {
+  const m = location.hash.match(/d=([\w-]+)/);
+  const app = document.getElementById("app");
+  const tabs = [["deals", "🔥", "Deals"], ["watch", "👀", "Watching"], ["radar", "🧭", "Radar"], ["status", "🛠️", "Status"]];
+  const body = m ? viewDeal(m[1]) : TAB === "deals" ? viewDeals() : TAB === "watch" ? viewSearches(true)
+             : TAB === "radar" ? viewSearches(false) : viewStatus();
+  app.innerHTML = `${m ? "" : `<header><h1>${{deals: "Deals", watch: "Watching", radar: "Radar", status: "Status"}[TAB]}</h1>
+      <span class="sub">updated ${ago(DATA.generated)}</span></header>`}
+    <main>${body}</main>
+    <nav>${tabs.map(([k, i, l]) => `<button class="${!m && TAB === k ? "on" : ""}" onclick="TAB='${k}';location.hash='';render();scrollTo(0,0)"><span>${i}</span>${l}</button>`).join("")}</nav>`;
+}
+
+function route() { if (DATA) render(); }
+window.addEventListener("hashchange", () => { scrollTo(0, 0); route(); });
+
+(async () => {
+  let pw = null;
+  try { pw = localStorage.getItem(PW_KEY); } catch (e) {}
+  if (!pw) return lockScreen();
+  try { await load(pw); sessionPw = pw; route(); }
+  catch (e) { lockScreen("Enter your dashboard password"); }
+})();
+</script>
+</body>
+</html>

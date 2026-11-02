@@ -6,18 +6,24 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Deal Board">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f6f1ea" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#16130f" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>Deal Board</title>
 <style>
   :root {
     --bg: #f6f1ea; --card: #fffdf9; --ink: #1d1a16; --muted: #6f675d; --line: #e6ddd1;
-    --accent: #e0573a; --accent-ink: #fff; --good: #1f8a5b; --warn: #b7791f; --chip: #f0e8dc;
+    --accent: #c74329; --accent-ink: #fffdf9; --good: #1f8a5b; --warn: #b7791f; --chip: #f0e8dc;
+    --good-ink: #146c45; --warn-ink: #855a12;
     --r: 18px; --shadow: 0 1px 2px rgba(40,30,20,.06), 0 6px 20px rgba(40,30,20,.06);
   }
   @media (prefers-color-scheme: dark) {
     :root { --bg: #16130f; --card: #211d18; --ink: #f3ede4; --muted: #a59b8e; --line: #342e27;
-            --chip: #2c2620; --shadow: none; }
+            --chip: #2c2620; --shadow: none; --accent: #ef8a70; --accent-ink: #211d18;
+            --good-ink: #76d7a5; --warn-ink: #efbd67; }
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { margin: 0; background: var(--bg); color: var(--ink);
@@ -39,8 +45,8 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .chip { background: var(--chip); border-radius: 999px; padding: 2px 9px; font-size: 12.5px; }
   .chip.hot { background: var(--accent); color: var(--accent-ink); }
-  .chip.good { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
-  .chip.warn { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .chip.good { background: color-mix(in srgb, var(--good-ink) 18%, transparent); color: var(--good-ink); }
+  .chip.warn { background: color-mix(in srgb, var(--warn-ink) 18%, transparent); color: var(--warn-ink); }
   h2 { font: 650 13px/1 -apple-system, sans-serif; text-transform: uppercase; letter-spacing: .08em;
        color: var(--muted); margin: 22px 4px 6px; }
   nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--card);
@@ -78,6 +84,40 @@
   .seg button { flex: none; border: 1px solid var(--line); background: var(--card); color: var(--ink);
                 border-radius: 999px; padding: 6px 12px; font-size: 14px; }
   .seg button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  body { min-height: 100dvh; }
+  button, input, select { font: inherit; }
+  button, select { cursor: pointer; }
+  button:disabled { cursor: wait; opacity: .6; }
+  a, button, input, select { outline-offset: 3px; }
+  :focus-visible { outline: 3px solid var(--warn); }
+  .card { transition: transform .18s ease-out, box-shadow .18s ease-out; }
+  @media (hover: hover) { a.card:hover { transform: translateY(-2px); } }
+  .icon { width: 21px; height: 21px; display: block; fill: none; stroke: currentColor;
+          stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .refresh { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line);
+             border-radius: 50%; background: var(--card); color: var(--ink); padding: 0; }
+  .refresh.busy .icon { animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .sort { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .sort select { min-height: 44px; max-width: 142px; border: 1px solid var(--line); border-radius: 12px;
+                 background: var(--card); color: var(--ink); padding: 0 8px; }
+  .seg { flex: 1; }
+  .seg button, .back { min-height: 44px; }
+  nav button { min-height: 58px; cursor: pointer; }
+  nav button span { font-size: inherit; }
+  nav button .icon { margin: 0 auto 3px; }
+  .price .was { display: block; color: var(--muted); font: 400 12px/1.4 -apple-system, sans-serif;
+                text-decoration: line-through; margin-top: 5px; }
+  .price .advertised { display: block; color: var(--muted); font: 400 11px/1.4 -apple-system, sans-serif; margin-top: 5px; }
+  .notice { padding: 10px 12px; border: 1px solid var(--warn); border-radius: 12px; margin: 8px 0;
+            color: var(--ink); background: var(--card); font-size: 14px; }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 8px; }
+  .install { line-height: 1.55; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -85,10 +125,12 @@
 
 <script>
 const PW_KEY = "dealboard_pw";
-let DATA = null, TAB = "deals", FILTER = "all", retries = 0;
+let DATA = null, TAB = "deals", FILTER = "all", SORT = "new", retries = 0;
+let sessionPw = null, refreshing = false, NOTICE = "";
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const safeUrl = u => /^https?:\/\//i.test(u || "") ? esc(u) : "#";
+const validUrl = u => /^https?:\/\//i.test(u || "");
+const safeUrl = u => validUrl(u) ? esc(u) : "";
 const gbp = n => n == null ? "" : "£" + Math.round(n).toLocaleString("en-GB");
 const day = iso => { if (!iso) return ""; const d = new Date(iso.slice(0,10) + "T12:00:00");
   return d.toLocaleDateString("en-GB", {weekday: "short", day: "numeric", month: "short"}); };
@@ -96,6 +138,14 @@ const ago = iso => { if (!iso) return "never"; const m = (Date.now() - new Date(
   if (m < 60) return Math.max(1, Math.round(m)) + " min ago"; if (m < 1440) return Math.round(m/60) + "h ago";
   return Math.round(m/1440) + "d ago"; };
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const ICONS = {
+  deals: '<path d="M3 12h18M12 3c3 3 4 6 4 9s-1 6-4 9c-3-3-4-6-4-9s1-6 4-9Z"/><path d="M5 7.5c4 1.5 10 1.5 14 0M5 16.5c4-1.5 10-1.5 14 0"/>',
+  watch: '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/>',
+  radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m12 12 6-6M12 3v2M21 12h-2M12 21v-2M3 12h2"/>',
+  status: '<path d="M4 19h16M6 16V9M12 16V4M18 16v-5"/>',
+  refresh: '<path d="M20 7v5h-5"/><path d="M19 12a7 7 0 1 0-1.5 5"/>',
+};
+const icon = name => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;
 
 async function decrypt(blob, pw) {
   const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
@@ -106,9 +156,30 @@ async function decrypt(blob, pw) {
 }
 
 async function load(pw) {
-  const r = await fetch("data.json?t=" + Date.now(), {cache: "no-store"});
+  const r = await fetch("data.json?t=" + Date.now(), {cache: "no-cache"});
   if (!r.ok) throw new Error("no data yet");
   DATA = await decrypt(await r.json(), pw);
+}
+
+async function refreshData(manual = false) {
+  if (!sessionPw || refreshing) return;
+  refreshing = true;
+  const btn = document.getElementById("refresh");
+  if (btn) { btn.classList.add("busy"); btn.disabled = true; }
+  try {
+    await load(sessionPw);
+    NOTICE = "";
+    retries = 0;
+    route();
+    if (manual) window.scrollTo({top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  } catch (e) {
+    NOTICE = "Couldn’t refresh. Showing the last data saved on this device.";
+    if (manual || DATA) route();
+  } finally {
+    refreshing = false;
+    const current = document.getElementById("refresh");
+    if (current) { current.classList.remove("busy"); current.disabled = false; }
+  }
 }
 
 function lockScreen(msg) {
@@ -122,35 +193,47 @@ function lockScreen(msg) {
     </div>`;
   const go = async () => {
     const pw = document.getElementById("pw").value;
+    if (!pw) return lockScreen("Enter your dashboard password");
+    const button = document.getElementById("go");
+    button.disabled = true;
+    button.textContent = "Unlocking…";
     try { await load(pw);
       if (document.getElementById("rem").checked) { try { localStorage.setItem(PW_KEY, pw); } catch (e) {} }
       sessionPw = pw; route();
-    } catch (e) { lockScreen("That didn't work. Check the password and try again"); }
+    } catch (e) { lockScreen("That didn't work. Check the password and your connection, then try again"); }
   };
   document.getElementById("go").onclick = go;
   document.getElementById("pw").onkeydown = e => { if (e.key === "Enter") go(); };
 }
 
-let sessionPw = null;
-
 // ---------------------------------------------------------------- views
 function dealCard(d) {
   const chips = [];
-  if (d.error_fare) chips.push(`<span class="chip hot">Error fare</span>`);
+  const current = d.price_gbp ?? d.advertised_price_gbp;
+  const calculated = d.baseline && d.price_gbp < d.baseline ? Math.round((1 - d.price_gbp / d.baseline) * 100) : null;
+  const discount = d.discount_pct ?? calculated;
+  if (d.error_fare) chips.push(`<span class="chip hot">${d.error_source === "price" ? "Possible mistake fare" : d.error_source === "reported" ? "Reported mistake fare" : "Error fare"}</span>`);
+  if (discount > 0) chips.push(`<span class="chip good">−${discount}%</span>`);
   if (d.cabin_label && d.cabin_label !== "economy") chips.push(`<span class="chip">${esc(d.cabin_label)}</span>`);
-  if (d.best_market) chips.push(`<span class="chip good">💱 save ${gbp(d.best_market.saving)}</span>`);
-  if (d.live) chips.push(`<span class="chip ${d.live.ok ? "good" : "warn"}">${d.live.ok ? "Live" : "May have gone"}</span>`);
-  if (d.trip_total) chips.push(`<span class="chip">🧳 trip ${gbp(d.trip_total.total)}</span>`);
-  if (d.caution) chips.push(`<span class="chip warn">⚠️ read up</span>`);
-  const price = d.price_gbp != null ? gbp(d.price_gbp) : "";
+  if (d.best_market) chips.push(`<span class="chip good">Save ${gbp(d.best_market.saving)} abroad</span>`);
+  if (d.live) {
+    const label = d.live.ok === true ? "Price matched" : d.live.ok === false ? "Price changed" : "Fare found";
+    chips.push(`<span class="chip ${d.live.ok === true ? "good" : "warn"}">${label}</span>`);
+  } else if (d.verified === false) {
+    chips.push(`<span class="chip warn">${d.kind === "feed" ? "Not price-checked" : "Cached fare"}</span>`);
+  }
+  if (d.trip_total) chips.push(`<span class="chip">Trip ${gbp(d.trip_total.total)}</span>`);
+  if (d.caution) chips.push(`<span class="chip warn">Read up</span>`);
   const when = d.dep ? `${day(d.dep)} → ${day(d.ret)} · ` : "";
+  const was = d.baseline && d.price_gbp < d.baseline ? `<span class="was">normally ${gbp(d.baseline)}</span>` : "";
+  const advertised = d.price_gbp == null && d.advertised_price_gbp != null ? `<span class="advertised">advertised</span>` : "";
   return `<a class="card deal" href="#d=${esc(d.id)}">
     <div class="flag">${esc(d.flag || "✈️")}</div>
     <div class="grow"><div class="t">${esc(d.dest_name || d.title)}</div>
       <div class="m">${esc(when)}${esc(d.origin_name ? "from " + d.origin_name : "")}</div>
       <div class="m">${esc(d.search || d.source || "")} · ${ago(d.created)}</div>
       <div class="chips">${chips.join("")}</div></div>
-    <div class="price">${price}</div></a>`;
+    <div class="price">${current != null ? gbp(current) : ""}${was}${advertised}</div></a>`;
 }
 
 function spark(hist) {
@@ -161,7 +244,7 @@ function spark(hist) {
   const xy = vals.map((v, i) => [i / (vals.length - 1) * W, H - 4 - (v - lo) / span * (H - 8)]);
   const path = xy.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
   const last = xy[xy.length - 1];
-  return `<svg class="spark" viewBox="0 0 ${W} ${H + 6}" preserveAspectRatio="none">
+  return `<svg class="spark" viewBox="0 0 ${W} ${H + 6}" preserveAspectRatio="none" role="img" aria-label="Price history from ${gbp(lo)} to ${gbp(hi)}">
     <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
     <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="var(--accent)"/></svg>
     <div class="m" style="display:flex;justify-content:space-between"><span>${esc(day(pts[0][0]))}</span>
@@ -169,13 +252,22 @@ function spark(hist) {
 }
 
 function viewDeals() {
-  const kinds = {all: "All", fare: "Fare finds", feed: "From deal sites", error: "Error fares"};
-  let list = DATA.deals;
+  const kinds = {all: "All", fare: "Fare finds", feed: "Deal sites", error: "Mistake fares"};
+  let list = DATA.deals.slice();
   if (FILTER === "fare") list = list.filter(d => d.kind === "fare");
   if (FILTER === "feed") list = list.filter(d => d.kind === "feed");
   if (FILTER === "error") list = list.filter(d => d.error_fare);
-  return `<div class="seg">${Object.entries(kinds).map(([k, v]) =>
-      `<button class="${FILTER === k ? "on" : ""}" onclick="FILTER='${k}';render()">${v}</button>`).join("")}</div>
+  const discount = d => d.discount_pct ?? (d.baseline && d.price_gbp < d.baseline ? Math.round((1 - d.price_gbp / d.baseline) * 100) : 0);
+  if (SORT === "discount") list.sort((a, b) => discount(b) - discount(a));
+  if (SORT === "price") list.sort((a, b) => (a.price_gbp ?? a.advertised_price_gbp ?? Infinity) - (b.price_gbp ?? b.advertised_price_gbp ?? Infinity));
+  if (SORT === "new") list.sort((a, b) => String(b.created || "").localeCompare(String(a.created || "")));
+  return `<div class="toolbar"><div class="seg">${Object.entries(kinds).map(([k, v]) =>
+      `<button class="${FILTER === k ? "on" : ""}" aria-pressed="${FILTER === k}" onclick="FILTER='${k}';render()">${v}</button>`).join("")}</div>
+      <label class="sort">Sort <select onchange="SORT=this.value;render()" aria-label="Sort deals">
+        <option value="new" ${SORT === "new" ? "selected" : ""}>Newest</option>
+        <option value="discount" ${SORT === "discount" ? "selected" : ""}>Biggest drop</option>
+        <option value="price" ${SORT === "price" ? "selected" : ""}>Lowest price</option>
+      </select></label></div>
     ${list.length ? list.map(dealCard).join("") : `<div class="empty">No deals here yet. They'll appear as alerts come in.</div>`}`;
 }
 
@@ -190,7 +282,7 @@ function viewSearches(watched) {
           <div class="m">${esc(day(b.dep))} · ${esc(b.stay)}n from ${esc(b.origin_name)}${watched ? "" : " · " + esc(b.cabin_label)}
           ${b.caution ? " · ⚠️" : ""}</div></span>
         <b>${gbp(b.all_in)}${b.adults > 1 ? `<div class="m">for ${b.adults}</div>` : ""}
-          ${b.pct_below ? `<div class="m" style="color:var(--good)">${b.pct_below}% below normal</div>` : ""}</b>
+          ${b.pct_below ? `<div class="m" style="color:var(--good-ink)">${b.pct_below}% below normal</div>` : ""}</b>
       </div>${watched ? spark(b.history) : ""}`).join("") : `<div class="m">No prices yet</div>`;
     return `<h2>${esc(s.name)}</h2><div class="card">${body}
       <div class="m" style="margin-top:8px">Checked ${ago(s.last_run)}</div></div>`;
@@ -206,6 +298,8 @@ function viewStatus() {
       <div class="row"><span>Deal feeds</span><b>${ago(DATA.feeds_last_run)}</b></div>
       <div class="row"><span>Dashboard updated</span><b>${ago(DATA.generated)}</b></div></div>
     <h2>Deal feeds</h2><div class="card">${src || '<div class="m">No feeds set up</div>'}</div>
+    <h2>iPhone app</h2><div class="card install"><b>Add to your Home Screen</b>
+      <p class="m">In Safari, tap Share → Add to Home Screen. The icon opens the board full-screen, and the last encrypted data remains available offline. Deal alerts still arrive through ntfy.</p></div>
     <div class="card"><button class="back" onclick="try{localStorage.removeItem('${PW_KEY}')}catch(e){};location.hash='';location.reload()">Lock this phone</button></div>`;
 }
 
@@ -225,7 +319,9 @@ function viewDeal(id) {
   if (d.cabin_label) rows.push(["Cabin", d.cabin_label]);
   if (d.adults > 1) rows.push(["Travellers", d.adults]);
   if (d.all_in && d.all_in !== d.price_gbp) rows.push(["All in", gbp(d.all_in)]);
-  if (d.baseline) rows.push(["Normally", gbp(d.baseline)]);
+  if (d.baseline) rows.push(["Normally", `${gbp(d.baseline)}${d.baseline_days ? ` · ${d.baseline_days} earlier days` : ""}`]);
+  if (d.saving) rows.push(["Saving vs normal", gbp(d.saving)]);
+  if (d.advertised_price_gbp || d.advertised_price) rows.push(["Post advertised", d.advertised_price_gbp ? gbp(d.advertised_price_gbp) : d.advertised_price]);
   if (d.trip_type) rows.push(["Trip", d.trip_type === "one way" ? "One way only" : "Return"]);
   const mk = (d.markets || []).length ? `<h2>Buy it in another country</h2><div class="card">
       <div class="row"><span>🇬🇧 the UK</span><b>${gbp(d.price_gbp)}</b></div>
@@ -236,39 +332,42 @@ function viewDeal(id) {
       <div class="stay"><div style="display:flex;justify-content:space-between;gap:8px">
         <span><span class="chip">${esc(s.label)}</span> <b>${esc(s.name)}</b></span><b>${gbp(s.per_night)}<span class="m">/night</span></b></div>
         <div class="m">${s.stars ? s.stars + "★ · " : ""}${s.rating ? s.rating.toFixed(1) + "/5" : ""}${s.note ? " · " + esc(s.note) : ""}</div>
-        ${s.link ? `<a class="m" href="${safeUrl(s.link)}" target="_blank" rel="noopener">Hotel website →</a>` : ""}</div>`).join("")}
+        ${validUrl(s.link) ? `<a class="m" href="${safeUrl(s.link)}" target="_blank" rel="noopener">Hotel website →</a>` : ""}</div>`).join("")}
       ${d.trip_total ? `<div class="note">🧳 Whole trip from <b>${gbp(d.trip_total.total)}</b> (flight + ${esc(d.trip_total.stay)})</div>` : ""}</div>` : "";
-  const book = (d.best_market && d.best_market.link) || d.book_url;
+  const bookValue = (d.best_market && d.best_market.link) || d.book_url;
+  const book = validUrl(bookValue) ? bookValue : null;
   return `<div style="padding-top:8px"><button class="back" onclick="history.length>1?history.back():location.hash=''">← Back</button></div>
     <div class="card hero"><div class="flag">${esc(d.flag || "✈️")}</div>
       <div class="t" style="font-size:20px;margin-top:6px">${esc(d.dest_name || d.title)}</div>
       ${d.price_gbp != null ? `<div class="big">${gbp(d.price_gbp)}</div>
-        <div class="m">${d.adults > 1 ? "for " + d.adults + " · " : ""}return${d.best_market ? ` · or <b style="color:var(--good)">${gbp(d.best_market.price_gbp)}</b> bought in ${esc(d.best_market.name)}` : ""}</div>` : ""}
+        <div class="m">${d.adults > 1 ? "for " + d.adults + " · " : ""}${d.trip_type === "one way" ? "one way" : "return"}${d.best_market ? ` · or <b style="color:var(--good-ink)">${gbp(d.best_market.price_gbp)}</b> bought in ${esc(d.best_market.name)}` : ""}</div>` : ""}
       ${d.reason ? `<div class="note" style="text-align:left">${esc(d.reason)}</div>` : ""}
       ${d.live ? `<div class="note" style="text-align:left">${esc(d.live.text)}</div>` : ""}
+      ${d.booking_caution ? `<div class="note" style="text-align:left">${esc(d.booking_caution)}</div>` : ""}
       ${d.caution ? `<div class="note" style="text-align:left">${esc(d.caution)}</div>` : ""}
       <div class="btns">
-        ${book ? `<a class="btn primary" href="${safeUrl(book)}" target="_blank" rel="noopener">✈️ Book flights${d.best_market && d.best_market.link ? " (" + esc(d.best_market.name) + " price)" : ""}</a>` : ""}
-        ${d.hotels_url ? `<a class="btn" href="${safeUrl(d.hotels_url)}" target="_blank" rel="noopener">🏨 Hotels</a>` : ""}
-        ${d.source_url ? `<a class="btn" href="${safeUrl(d.source_url)}" target="_blank" rel="noopener">📰 Original post</a>` : ""}
+        ${book ? `<a class="btn primary" href="${safeUrl(book)}" target="_blank" rel="noopener">Book flights${d.best_market && d.best_market.link ? " (" + esc(d.best_market.name) + " price)" : ""}</a>` : ""}
+        ${validUrl(d.hotels_url) ? `<a class="btn" href="${safeUrl(d.hotels_url)}" target="_blank" rel="noopener">Find hotels</a>` : ""}
+        ${validUrl(d.source_url) ? `<a class="btn" href="${safeUrl(d.source_url)}" target="_blank" rel="noopener">Original post</a>` : ""}
       </div></div>
     ${rows.length ? `<div class="card">${rows.map(([k, v]) => `<div class="row"><span class="m">${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>` : ""}
     ${d.history && Object.keys(d.history).length > 1 ? `<h2>Price over time</h2><div class="card">${spark(d.history)}</div>` : ""}
     ${mk}${st}
-    ${d.verified === false ? `<div class="m" style="padding:0 6px">Flight price not yet verified, so check it on the booking page.</div>` : ""}`;
+    ${d.verified === false ? `<div class="m" style="padding:0 6px">${d.kind === "feed" ? "The advertised price has not been matched to a live fare. Check the original post before booking." : "Flight price not yet verified, so check it on the booking page."}</div>` : ""}`;
 }
 
 // ---------------------------------------------------------------- shell
 function render() {
   const m = location.hash.match(/d=([\w-]+)/);
   const app = document.getElementById("app");
-  const tabs = [["deals", "🔥", "Deals"], ["watch", "👀", "Watching"], ["radar", "🧭", "Radar"], ["status", "🛠️", "Status"]];
+  const tabs = [["deals", "deals", "Deals"], ["watch", "watch", "Watching"], ["radar", "radar", "Radar"], ["status", "status", "Status"]];
   const body = m ? viewDeal(m[1]) : TAB === "deals" ? viewDeals() : TAB === "watch" ? viewSearches(true)
              : TAB === "radar" ? viewSearches(false) : viewStatus();
   app.innerHTML = `${m ? "" : `<header><h1>${{deals: "Deals", watch: "Watching", radar: "Radar", status: "Status"}[TAB]}</h1>
-      <span class="sub">updated ${ago(DATA.generated)}</span></header>`}
-    <main>${body}</main>
-    <nav>${tabs.map(([k, i, l]) => `<button class="${!m && TAB === k ? "on" : ""}" onclick="TAB='${k}';location.hash='';render();scrollTo(0,0)"><span>${i}</span>${l}</button>`).join("")}</nav>`;
+      <div class="header-actions"><span class="sub">updated ${ago(DATA.generated)}</span>
+      <button class="refresh" id="refresh" aria-label="Refresh deals" title="Refresh deals" onclick="refreshData(true)">${icon("refresh")}</button></div></header>`}
+    <main>${NOTICE ? `<div class="notice" role="status">${esc(NOTICE)}</div>` : ""}${body}</main>
+    <nav aria-label="Dashboard sections">${tabs.map(([k, i, l]) => `<button class="${!m && TAB === k ? "on" : ""}" aria-pressed="${!m && TAB === k}" onclick="TAB='${k}';location.hash='';render();scrollTo(0,0)"><span>${icon(i)}</span>${l}</button>`).join("")}</nav>`;
 }
 
 function route() { if (DATA) render(); }
@@ -281,6 +380,14 @@ window.addEventListener("hashchange", () => { scrollTo(0, 0); route(); });
   try { await load(pw); sessionPw = pw; route(); }
   catch (e) { lockScreen("Enter your dashboard password"); }
 })();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+setInterval(() => { if (document.visibilityState === "visible") refreshData(); }, 5 * 60 * 1000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && DATA && Date.now() - new Date(DATA.generated) > 5 * 60 * 1000) refreshData();
+});
 </script>
 </body>
 </html>
